@@ -6,7 +6,7 @@ export default defineConfig({
   brand: {
     displayName: '봉투 어디 있어?',
     primaryColor: '#FF6B35',
-    icon: 'https://sseksaki.github.io/bongtu/assets/logo_600x600.png',
+    icon: 'https://ssuksak.github.io/bongtu/assets/logo_600x600.png',
   },
   web: {
     host: 'localhost',

@@ -11,15 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sseksaki/bongtu.git"
+    "url": "git+https://github.com/ssuksak/bongtu.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/sseksaki/bongtu/issues"
+    "url": "https://github.com/ssuksak/bongtu/issues"
   },
-  "homepage": "https://github.com/sseksaki/bongtu#readme",
+  "homepage": "https://github.com/ssuksak/bongtu#readme",
   "dependencies": {},
   "devDependencies": {
     "@apps-in-toss/web-framework": "^2.4.1",
