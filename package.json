@@ -1,0 +1,28 @@
+{
+  "name": "bongtu",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "granite:build": "granite build",
+    "granite:dev": "granite dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sseksaki/bongtu.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sseksaki/bongtu/issues"
+  },
+  "homepage": "https://github.com/sseksaki/bongtu#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@apps-in-toss/web-framework": "^2.4.1",
+    "vite": "^8.0.3"
+  }
+}
