@@ -2,324 +2,365 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>봉투 어디 있어? 🗑️</title>
   <meta name="description" content="내 주변 종량제봉투 판매처 지도 — GPS로 찾기, 가격 확인, 재고 신고" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=1bdea39e89a2a7884695c90e4340e734&libraries=services,clusterer"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #111; --card: #1e1e1e; --border: #333;
-      --yellow: #f5c518; --green: #22c55e; --red: #ef4444; --text: #f0f0f0; --muted: #888;
+      --yellow: #f5c518; --green: #16a34a; --red: #dc2626;
+      --bg: #111; --card: #1e1e1e; --border: #333; --text: #f0f0f0; --muted: #888;
     }
-    html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+    html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; overflow: hidden; background: #111; }
 
-    /* 상단 헤더 */
+    /* 헤더 */
     #header {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-      background: rgba(17,17,17,0.95); backdrop-filter: blur(10px);
-      padding: 12px 16px; display: flex; align-items: center; gap: 10px;
-      border-bottom: 1px solid var(--border);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(0,0,0,0.88); backdrop-filter: blur(12px);
+      padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
-    #header h1 { font-size: 17px; font-weight: 900; color: var(--yellow); flex: 1; }
-    #header .sub { font-size: 12px; color: var(--muted); }
-    #location-btn {
+    #header h1 { font-size: 16px; font-weight: 900; color: var(--yellow); flex: 1; letter-spacing: -0.5px; }
+    #header .region { font-size: 11px; color: var(--muted); max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #gps-btn {
       background: var(--yellow); color: #000; border: none; border-radius: 8px;
-      padding: 7px 12px; font-size: 12px; font-weight: 700;
+      padding: 7px 11px; font-size: 12px; font-weight: 700;
       font-family: 'Noto Sans KR', sans-serif; cursor: pointer; white-space: nowrap;
     }
+    #gps-btn:active { opacity: 0.8; }
 
     /* 지도 */
-    #map { position: fixed; top: 56px; left: 0; right: 0; bottom: 180px; }
+    #map { position: fixed; top: 50px; left: 0; right: 0; bottom: 0; }
 
-    /* 하단 패널 */
-    #bottom-panel {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
-      background: var(--card); border-top: 1px solid var(--border);
-      height: 180px; padding: 14px 16px; overflow-y: auto;
+    /* 가격 오버레이 */
+    #price-bar {
+      position: fixed; bottom: 170px; left: 12px; right: 12px; z-index: 99;
+      background: rgba(0,0,0,0.82); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+      padding: 9px 14px; font-size: 12px; color: #ccc;
+      display: none; transition: opacity 0.2s;
     }
-    #panel-default { text-align: center; padding-top: 20px; }
-    #panel-default p { font-size: 14px; color: var(--muted); line-height: 1.7; }
-    #panel-default strong { color: var(--yellow); }
-    #panel-store { display: none; }
-    .store-name { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
-    .store-addr { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-    .price-tag {
-      display: inline-block; background: #222; border: 1px solid var(--border);
-      border-radius: 6px; padding: 4px 10px; font-size: 12px; margin-right: 6px; margin-bottom: 8px;
-    }
-    .price-tag span { color: var(--yellow); font-weight: 700; }
-    .stock-row { display: flex; gap: 8px; margin-top: 4px; }
-    .stock-btn {
-      flex: 1; border: none; border-radius: 8px; padding: 10px; font-size: 13px;
-      font-weight: 700; font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
-    }
-    .stock-btn.yes { background: #14532d; color: #4ade80; }
-    .stock-btn.no  { background: #450a0a; color: #f87171; }
-    .stock-status {
-      font-size: 12px; color: var(--muted); margin-top: 8px; text-align: center;
-    }
-    .stock-status .dot-green { color: var(--green); font-size: 16px; }
-    .stock-status .dot-red   { color: var(--red);   font-size: 16px; }
-    .stock-status .dot-gray  { color: var(--muted); font-size: 16px; }
+    #price-bar b { color: var(--yellow); }
+    #price-bar .region-name { font-weight: 700; color: #fff; margin-right: 6px; }
 
     /* 범례 */
     #legend {
-      position: fixed; bottom: 190px; right: 12px; z-index: 999;
-      background: rgba(17,17,17,0.9); border: 1px solid var(--border);
-      border-radius: 8px; padding: 8px 10px; font-size: 11px; color: var(--muted);
+      position: fixed; bottom: 170px; right: 12px; z-index: 99;
+      background: rgba(0,0,0,0.82); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+      padding: 8px 10px; font-size: 11px; color: var(--muted);
     }
-    #legend div { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
-    #legend .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    #legend div { display: flex; align-items: center; gap: 5px; margin-bottom: 2px; }
+    #legend div:last-child { margin-bottom: 0; }
+    .ldot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
-    /* 가격 배너 */
-    #price-banner {
-      position: fixed; bottom: 180px; left: 0; right: 100px; z-index: 999;
-      padding: 0 12px;
+    /* 하단 패널 */
+    #panel {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      background: #1a1a1a; border-top: 1px solid #2a2a2a;
+      border-radius: 18px 18px 0 0; padding: 16px 16px 28px;
+      min-height: 155px;
+      transform: translateY(0); transition: transform 0.25s ease;
     }
-    #price-info {
-      background: rgba(17,17,17,0.92); border: 1px solid var(--border);
-      border-radius: 8px; padding: 8px 12px; font-size: 12px; display: none;
-    }
-    #price-info .region { font-weight: 700; color: var(--yellow); }
+    .panel-handle { width: 36px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 14px; }
 
-    /* 로딩 오버레이 */
+    /* 기본 패널 */
+    #panel-default { text-align: center; }
+    #panel-default p { font-size: 13px; color: var(--muted); line-height: 1.8; }
+    #panel-default strong { color: var(--yellow); }
+    .crisis-badge {
+      display: inline-block; background: #3b1212; color: #f87171;
+      border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    /* 가게 패널 */
+    #panel-store { display: none; }
+    .store-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .store-icon { font-size: 24px; flex-shrink: 0; }
+    .store-info { flex: 1; overflow: hidden; }
+    .store-name { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .store-addr { font-size: 11px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .store-dist { font-size: 11px; color: var(--yellow); margin-top: 1px; }
+    .price-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .chip { background: #262626; border: 1px solid #333; border-radius: 6px; padding: 4px 10px; font-size: 12px; }
+    .chip b { color: var(--yellow); }
+    .btns { display: flex; gap: 8px; }
+    .btn-yes, .btn-no {
+      flex: 1; border: none; border-radius: 10px; padding: 11px;
+      font-size: 13px; font-weight: 700; font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
+    }
+    .btn-yes { background: #14532d; color: #4ade80; }
+    .btn-no  { background: #450a0a; color: #f87171; }
+    .btn-yes:active, .btn-no:active { opacity: 0.8; }
+    .report-status { text-align: center; font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+    /* 로딩 */
     #loading {
-      position: fixed; inset: 0; z-index: 2000;
-      background: var(--bg); display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 12px;
+      position: fixed; inset: 0; z-index: 999;
+      background: #111; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 14px;
     }
-    #loading .emoji { font-size: 48px; animation: bounce 1s infinite; }
+    .spin { font-size: 44px; animation: spin 1.5s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     #loading p { font-size: 14px; color: var(--muted); }
-    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    #loading small { font-size: 11px; color: #555; margin-top: -8px; }
 
-    .leaflet-popup-content-wrapper { background: #1e1e1e; color: #f0f0f0; border: 1px solid #333; border-radius: 10px; }
-    .leaflet-popup-tip { background: #1e1e1e; }
+    /* 커스텀 마커 */
+    .cmarker {
+      width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .cmarker.green  { background: var(--green); }
+    .cmarker.red    { background: var(--red); }
+    .cmarker.gray   { background: #555; }
+    .cmarker.me     { background: var(--yellow); border-color: #fff; }
+
+    /* 알림 토스트 */
+    #toast {
+      position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+      background: #222; border: 1px solid #444; color: #fff;
+      padding: 8px 16px; border-radius: 20px; font-size: 13px;
+      z-index: 200; display: none; white-space: nowrap;
+    }
   </style>
 </head>
 <body>
 
 <div id="loading">
-  <div class="emoji">🗑️</div>
+  <div class="spin">🗑️</div>
   <p>내 주변 판매처 찾는 중...</p>
+  <small>위치 권한을 허용해주세요</small>
 </div>
 
+<div id="toast"></div>
+
 <div id="header">
-  <h1>봉투 어디 있어?</h1>
-  <span class="sub" id="region-label">위치 확인 중</span>
-  <button id="location-btn" onclick="locateUser()">📍 내 위치</button>
+  <h1>🗑️ 봉투 어디 있어?</h1>
+  <span class="region" id="region-label">—</span>
+  <button id="gps-btn" onclick="locateUser()">📍 내 위치</button>
 </div>
 
 <div id="map"></div>
 
-<div id="price-banner">
-  <div id="price-info"></div>
-</div>
+<div id="price-bar"></div>
 
 <div id="legend">
-  <div><span class="dot" style="background:#22c55e"></span> 재고 있음</div>
-  <div><span class="dot" style="background:#ef4444"></span> 품절 신고</div>
-  <div><span class="dot" style="background:#888"></span> 정보 없음</div>
+  <div><span class="ldot" style="background:var(--green)"></span> 재고 있음</div>
+  <div><span class="ldot" style="background:var(--red)"></span> 품절</div>
+  <div><span class="ldot" style="background:#555"></span> 미확인</div>
 </div>
 
-<div id="bottom-panel">
+<div id="panel">
+  <div class="panel-handle"></div>
   <div id="panel-default">
-    <p>지도의 <strong>핀을 눌러</strong> 재고 상황을 확인하고<br />있어요 / 없어요 신고를 해주세요 🙏</p>
+    <div class="crisis-badge">🔴 봉투 품귀 대란 중</div>
+    <p>핀을 눌러서 재고를 확인하고<br /><strong>있어요 / 없어요</strong>를 신고해주세요 🙏</p>
   </div>
   <div id="panel-store">
-    <div class="store-name" id="s-name"></div>
-    <div class="store-addr" id="s-addr"></div>
-    <div id="s-prices"></div>
-    <div class="stock-row">
-      <button class="stock-btn yes" onclick="reportStock(true)">✅ 있어요!</button>
-      <button class="stock-btn no"  onclick="reportStock(false)">❌ 없어요</button>
+    <div class="store-header">
+      <div class="store-icon" id="s-icon">🏪</div>
+      <div class="store-info">
+        <div class="store-name" id="s-name"></div>
+        <div class="store-addr" id="s-addr"></div>
+        <div class="store-dist" id="s-dist"></div>
+      </div>
     </div>
-    <div class="stock-status" id="s-status"></div>
+    <div class="price-chips" id="s-prices"></div>
+    <div class="btns">
+      <button class="btn-yes" onclick="report(true)">✅ 있어요!</button>
+      <button class="btn-no"  onclick="report(false)">❌ 없어요</button>
+    </div>
+    <div class="report-status" id="s-status"></div>
   </div>
 </div>
 
 <script>
-// ── 지역별 가격 데이터 ──────────────────────────────────────────
+// ── 가격 데이터 ───────────────────────────────────────────────
 const PRICES = {
-  "서울": { "10L": 230, "20L": 490, "50L": 1140 },
-  "부산": { "10L": 260, "20L": 510, "50L": 1190 },
-  "대구": { "10L": 310, "20L": 622, "50L": 1470 },
-  "인천": { "10L": 370, "20L": 758, "50L": 1790 },
-  "광주": { "10L": 240, "20L": 490, "50L": 1140 },
-  "대전": { "10L": 250, "20L": 500, "50L": 1170 },
-  "울산": { "10L": 280, "20L": 550, "50L": 1290 },
-  "세종": { "10L": 260, "20L": 520, "50L": 1230 },
-  "수원": { "10L": 290, "20L": 580, "50L": 1360 },
-  "성남": { "10L": 280, "20L": 560, "50L": 1310 },
-  "고양": { "10L": 270, "20L": 540, "50L": 1260 },
-  "용인": { "10L": 290, "20L": 580, "50L": 1360 },
-  "부천": { "10L": 300, "20L": 600, "50L": 1410 },
-  "안산": { "10L": 310, "20L": 620, "50L": 1460 },
-  "평택": { "10L": 300, "20L": 610, "50L": 1430 },
-  "광명": { "10L": 340, "20L": 680, "50L": 1600 },
-  "전주": { "10L": 220, "20L": 430, "50L": 1010 },
-  "창원": { "10L": 270, "20L": 540, "50L": 1260 },
-  "포항": { "10L": 280, "20L": 550, "50L": 1290 },
-  "제주": { "10L": 260, "20L": 520, "50L": 1220 },
-  "default": { "10L": 270, "20L": 540, "50L": 1270 },
+  "서울":{"5L":120,"10L":230,"20L":490,"50L":1140},
+  "부산":{"5L":130,"10L":260,"20L":510,"50L":1190},
+  "대구":{"5L":155,"10L":310,"20L":622,"50L":1470},
+  "인천":{"5L":185,"10L":370,"20L":758,"50L":1790},
+  "광주":{"5L":120,"10L":240,"20L":490,"50L":1140},
+  "대전":{"5L":125,"10L":250,"20L":500,"50L":1170},
+  "울산":{"5L":140,"10L":280,"20L":550,"50L":1290},
+  "세종":{"5L":130,"10L":260,"20L":520,"50L":1230},
+  "수원":{"5L":145,"10L":290,"20L":580,"50L":1360},
+  "성남":{"5L":140,"10L":280,"20L":560,"50L":1310},
+  "고양":{"5L":135,"10L":270,"20L":540,"50L":1260},
+  "용인":{"5L":145,"10L":290,"20L":580,"50L":1360},
+  "전주":{"5L":108,"10L":215,"20L":430,"50L":1010},
+  "창원":{"5L":135,"10L":270,"20L":540,"50L":1260},
+  "제주":{"5L":130,"10L":260,"20L":520,"50L":1220},
 };
+const PRICE_DEFAULT = {"5L":135,"10L":270,"20L":540,"50L":1270};
+
+// ── 아이콘 매핑 ───────────────────────────────────────────────
+const ICONS = {"GS25":"🟢","CU":"💛","세븐일레븐":"7️⃣","이마트24":"🔵","미니스톱":"🟠"};
 
 // ── 상태 ──────────────────────────────────────────────────────
-let map, userMarker, activeStore = null;
-const reports = JSON.parse(localStorage.getItem('bongtu_reports') || '{}');
+let map, myMarker, currentLat = 37.5665, currentLng = 126.9780;
+let activeStore = null, storeMarkers = [];
+const reports = JSON.parse(localStorage.getItem('bongtu_v2') || '{}');
 
 // ── 지도 초기화 ───────────────────────────────────────────────
 function initMap(lat, lng) {
-  map = L.map('map', { zoomControl: false }).setView([lat, lng], 15);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO', maxZoom: 19
-  }).addTo(map);
+  const container = document.getElementById('map');
+  map = new kakao.maps.Map(container, {
+    center: new kakao.maps.LatLng(lat, lng),
+    level: 4
+  });
+  currentLat = lat; currentLng = lng;
 
   // 내 위치 마커
-  userMarker = L.circleMarker([lat, lng], {
-    radius: 10, color: '#f5c518', fillColor: '#f5c518',
-    fillOpacity: 0.9, weight: 3
-  }).addTo(map).bindPopup('<b style="color:#f5c518">📍 내 위치</b>');
+  const meEl = document.createElement('div');
+  meEl.className = 'cmarker me';
+  meEl.innerHTML = '📍';
+  myMarker = new kakao.maps.CustomOverlay({
+    position: new kakao.maps.LatLng(lat, lng),
+    content: meEl,
+    yAnchor: 1
+  });
+  myMarker.setMap(map);
 
-  map.on('click', () => showDefaultPanel());
+  // 지도 클릭 시 패널 닫기
+  kakao.maps.event.addListener(map, 'click', showDefaultPanel);
+
   document.getElementById('loading').style.display = 'none';
+  searchStores(lat, lng);
+  setRegionPrice(lat, lng);
 }
 
 // ── GPS 위치 확인 ─────────────────────────────────────────────
 function locateUser() {
-  document.getElementById('location-btn').textContent = '위치 확인 중...';
+  document.getElementById('gps-btn').textContent = '찾는 중...';
   navigator.geolocation.getCurrentPosition(
     pos => {
       const { latitude: lat, longitude: lng } = pos.coords;
+      currentLat = lat; currentLng = lng;
       if (!map) {
         initMap(lat, lng);
-        fetchStores(lat, lng);
-        reverseGeocode(lat, lng);
       } else {
-        map.setView([lat, lng], 15);
-        userMarker.setLatLng([lat, lng]);
-        fetchStores(lat, lng);
-        reverseGeocode(lat, lng);
+        map.setCenter(new kakao.maps.LatLng(lat, lng));
+        myMarker.setPosition(new kakao.maps.LatLng(lat, lng));
+        searchStores(lat, lng);
+        setRegionPrice(lat, lng);
       }
-      document.getElementById('location-btn').textContent = '📍 내 위치';
+      document.getElementById('gps-btn').textContent = '📍 내 위치';
     },
     () => {
-      // GPS 실패 시 서울 기본값
-      if (!map) { initMap(37.5665, 126.9780); fetchStores(37.5665, 126.9780); }
-      document.getElementById('location-btn').textContent = '📍 내 위치';
-      document.getElementById('region-label').textContent = '서울 (기본값)';
-      showPrice('서울');
-      alert('위치 접근 권한이 없어요. 서울로 기본 설정했어요.');
+      if (!map) initMap(37.5665, 126.9780);
+      document.getElementById('gps-btn').textContent = '📍 내 위치';
+      toast('위치 권한이 없어 서울로 기본 설정했어요');
     },
-    { timeout: 10000, enableHighAccuracy: true }
+    { timeout: 8000, enableHighAccuracy: true }
   );
 }
 
-// ── 역 지오코딩 (지역명 + 가격) ───────────────────────────────
-async function reverseGeocode(lat, lng) {
-  try {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ko`,
-      { headers: { 'Accept-Language': 'ko' } }
-    );
-    const d = await r.json();
-    const city = d.address?.city || d.address?.county || d.address?.town || '알 수 없음';
-    document.getElementById('region-label').textContent = city;
-    // 가격 찾기
-    const cityKey = Object.keys(PRICES).find(k => city.includes(k)) || 'default';
-    showPrice(cityKey === 'default' ? city : cityKey);
-  } catch(e) {}
-}
+// ── 주변 편의점 검색 (카카오 Places) ─────────────────────────
+function searchStores(lat, lng) {
+  storeMarkers.forEach(m => m.setMap(null));
+  storeMarkers = [];
 
-function showPrice(region) {
-  const p = PRICES[region] || PRICES['default'];
-  const el = document.getElementById('price-info');
-  el.innerHTML = `<span class="region">${region}</span> 봉투가격 ·
-    10L <b style="color:#f5c518">${p['10L'].toLocaleString()}원</b> ·
-    20L <b style="color:#f5c518">${p['20L'].toLocaleString()}원</b> ·
-    50L <b style="color:#f5c518">${p['50L'].toLocaleString()}원</b>`;
-  el.style.display = 'block';
-}
+  const ps = new kakao.maps.services.Places();
+  const center = new kakao.maps.LatLng(lat, lng);
 
-// ── Overpass API로 편의점 조회 ────────────────────────────────
-async function fetchStores(lat, lng) {
-  const r = 1000; // 반경 1km
-  const query = `[out:json][timeout:15];
-    node["shop"="convenience"](around:${r},${lat},${lng});
-    out body;`;
-  try {
-    const resp = await fetch(
-      `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`
-    );
-    const data = await resp.json();
-    renderStores(data.elements || []);
-  } catch(e) {
-    console.warn('Overpass API 오류:', e);
-  }
-}
+  const keywords = ['편의점'];
+  let results = [];
 
-// ── 마커 렌더링 ───────────────────────────────────────────────
-function renderStores(stores) {
-  // 기존 마커 제거
-  map.eachLayer(l => { if (l._isStore) map.removeLayer(l); });
-
-  stores.forEach(s => {
-    const id = `store_${s.id}`;
-    const name = s.tags?.name || s.tags?.brand || '편의점';
-    const addr = [s.tags?.['addr:full'], s.tags?.['addr:street']].filter(Boolean).join(' ') || '주소 정보 없음';
-    const report = reports[id];
-
-    let color = '#888'; // 정보 없음
-    if (report) {
-      const age = Date.now() - report.time;
-      if (age < 3 * 60 * 60 * 1000) { // 3시간 이내 신고만 유효
-        color = report.inStock ? '#22c55e' : '#ef4444';
-      }
+  ps.keywordSearch('편의점', (data, status) => {
+    if (status === kakao.maps.services.Status.OK) {
+      results = data;
+      renderMarkers(results);
+    } else {
+      toast('주변 판매처 정보를 불러오지 못했어요');
     }
-
-    const marker = L.circleMarker([s.lat, s.lon], {
-      radius: 8, color, fillColor: color, fillOpacity: 0.85, weight: 2
-    });
-    marker._isStore = true;
-    marker._storeData = { id, name, addr, lat: s.lat, lng: s.lon };
-    marker.on('click', (e) => {
-      L.DomEvent.stopPropagation(e);
-      showStorePanel(marker._storeData);
-    });
-    marker.addTo(map);
+  }, {
+    location: center,
+    radius: 800,
+    size: 15
   });
 }
 
-// ── 패널 표시 ─────────────────────────────────────────────────
-function showStorePanel(store) {
-  activeStore = store;
-  const report = reports[store.id];
+// ── 마커 렌더링 ───────────────────────────────────────────────
+function renderMarkers(stores) {
+  stores.forEach(store => {
+    const id = store.id;
+    const rep = reports[id];
+    let colorClass = 'gray';
+    if (rep) {
+      const age = Date.now() - rep.time;
+      if (age < 4 * 3600000) colorClass = rep.inStock ? 'green' : 'red';
+    }
+
+    const brand = Object.keys(ICONS).find(k => store.place_name.includes(k)) || '';
+    const icon = ICONS[brand] || '🏪';
+
+    const el = document.createElement('div');
+    el.className = `cmarker ${colorClass}`;
+    el.innerHTML = icon;
+    el.title = store.place_name;
+
+    const marker = new kakao.maps.CustomOverlay({
+      position: new kakao.maps.LatLng(store.y, store.x),
+      content: el,
+      yAnchor: 1
+    });
+    marker.setMap(map);
+    marker._store = store;
+    marker._el = el;
+    storeMarkers.push(marker);
+
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showStorePanel(store, marker);
+    });
+  });
+
+  toast(`주변 편의점 ${stores.length}곳 찾았어요`);
+}
+
+// ── 가게 패널 ─────────────────────────────────────────────────
+function showStorePanel(store, marker) {
+  activeStore = { ...store, _marker: marker };
+
   document.getElementById('panel-default').style.display = 'none';
   document.getElementById('panel-store').style.display = 'block';
-  document.getElementById('s-name').textContent = store.name;
-  document.getElementById('s-addr').textContent = store.addr;
 
-  // 가격 (지역 기준)
+  // 브랜드 아이콘
+  const brand = Object.keys(ICONS).find(k => store.place_name.includes(k)) || '';
+  document.getElementById('s-icon').textContent = ICONS[brand] || '🏪';
+  document.getElementById('s-name').textContent = store.place_name;
+  document.getElementById('s-addr').textContent = store.road_address_name || store.address_name;
+
+  // 거리
+  const dist = store.distance ? `${store.distance}m` : '';
+  document.getElementById('s-dist').textContent = dist ? `📍 ${dist}` : '';
+
+  // 가격
   const region = document.getElementById('region-label').textContent;
-  const cityKey = Object.keys(PRICES).find(k => region.includes(k)) || 'default';
-  const p = PRICES[cityKey] || PRICES['default'];
-  document.getElementById('s-prices').innerHTML =
-    Object.entries(p).map(([sz, price]) =>
-      `<span class="price-tag">${sz} <span>${price.toLocaleString()}원</span></span>`
-    ).join('');
+  const key = Object.keys(PRICES).find(k => region.includes(k));
+  const p = key ? PRICES[key] : PRICE_DEFAULT;
+  document.getElementById('s-prices').innerHTML = Object.entries(p)
+    .map(([sz, price]) => `<span class="chip">${sz} <b>${price.toLocaleString()}원</b></span>`)
+    .join('');
 
-  // 신고 현황
+  // 신고 상태
+  const rep = reports[store.id];
   const statusEl = document.getElementById('s-status');
-  if (report) {
-    const age = Math.round((Date.now() - report.time) / 60000);
-    const dot = report.inStock ? '<span class="dot-green">●</span>' : '<span class="dot-red">●</span>';
-    const txt = report.inStock ? '재고 있음' : '품절 신고됨';
-    statusEl.innerHTML = `${dot} ${txt} · ${age}분 전 신고`;
+  if (rep) {
+    const age = Math.round((Date.now() - rep.time) / 60000);
+    const ageStr = age < 60 ? `${age}분 전` : `${Math.round(age/60)}시간 전`;
+    statusEl.innerHTML = rep.inStock
+      ? `🟢 재고 있음 신고 · ${ageStr}`
+      : `🔴 품절 신고 · ${ageStr}`;
   } else {
-    statusEl.innerHTML = '<span class="dot-gray">●</span> 아직 신고 없음 — 첫 신고자가 되어주세요!';
+    statusEl.textContent = '아직 신고 없음 — 첫 신고자가 되어주세요!';
   }
 }
 
@@ -330,27 +371,78 @@ function showDefaultPanel() {
 }
 
 // ── 재고 신고 ─────────────────────────────────────────────────
-function reportStock(inStock) {
+function report(inStock) {
   if (!activeStore) return;
-  reports[activeStore.id] = { inStock, time: Date.now() };
-  localStorage.setItem('bongtu_reports', JSON.stringify(reports));
+  const id = activeStore.id;
+  reports[id] = { inStock, time: Date.now() };
+  localStorage.setItem('bongtu_v2', JSON.stringify(reports));
 
   // 마커 색 업데이트
-  map.eachLayer(l => {
-    if (l._isStore && l._storeData?.id === activeStore.id) {
-      const color = inStock ? '#22c55e' : '#ef4444';
-      l.setStyle({ color, fillColor: color });
+  if (activeStore._marker) {
+    const el = activeStore._marker._el;
+    el.className = `cmarker ${inStock ? 'green' : 'red'}`;
+  }
+
+  const statusEl = document.getElementById('s-status');
+  statusEl.innerHTML = inStock ? '🟢 재고 있음 · 방금 신고됨 ✓' : '🔴 품절 · 방금 신고됨 ✓';
+  toast(inStock ? '✅ 재고 있음 신고 완료!' : '❌ 품절 신고 완료!');
+}
+
+// ── 지역 가격 표시 ────────────────────────────────────────────
+function setRegionPrice(lat, lng) {
+  // 카카오 geocoder로 지역명 가져오기
+  const geocoder = new kakao.maps.services.Geocoder();
+  geocoder.coord2RegionCode(lng, lat, (result, status) => {
+    if (status === kakao.maps.services.Status.OK) {
+      const region = result.find(r => r.region_type === 'H');
+      if (region) {
+        const cityName = region.region_1depth_name;
+        const guName = region.region_2depth_name;
+        const label = guName ? `${cityName} ${guName}` : cityName;
+        document.getElementById('region-label').textContent = label;
+
+        const key = Object.keys(PRICES).find(k => label.includes(k) || cityName.includes(k));
+        const p = key ? PRICES[key] : PRICE_DEFAULT;
+        const bar = document.getElementById('price-bar');
+        bar.innerHTML = `<span style="font-weight:700;color:#fff">${label}</span> &nbsp;
+          5L <b>${p['5L']}원</b> &nbsp;|&nbsp;
+          10L <b>${p['10L']}원</b> &nbsp;|&nbsp;
+          20L <b>${p['20L'].toLocaleString()}원</b> &nbsp;|&nbsp;
+          50L <b>${p['50L'].toLocaleString()}원</b>`;
+        bar.style.display = 'block';
+      }
     }
   });
+}
 
-  // 패널 업데이트
-  const statusEl = document.getElementById('s-status');
-  const dot = inStock ? '<span class="dot-green">●</span>' : '<span class="dot-red">●</span>';
-  statusEl.innerHTML = `${dot} ${inStock ? '재고 있음' : '품절 신고됨'} · 방금 신고됨 ✓`;
+// ── 토스트 ────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 2500);
 }
 
 // ── 시작 ──────────────────────────────────────────────────────
-locateUser();
+window.addEventListener('load', () => {
+  // GPS 시도, 5초 내로 안 되면 서울로 시작
+  const fallback = setTimeout(() => {
+    if (!map) { initMap(37.5665, 126.9780); }
+  }, 5000);
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      clearTimeout(fallback);
+      initMap(pos.coords.latitude, pos.coords.longitude);
+      document.getElementById('gps-btn').textContent = '📍 내 위치';
+    },
+    () => {
+      clearTimeout(fallback);
+      initMap(37.5665, 126.9780);
+    },
+    { timeout: 5000, enableHighAccuracy: false }
+  );
+});
 </script>
 </body>
 </html>
