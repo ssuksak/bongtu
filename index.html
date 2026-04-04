@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>봉투 어디 있어? 🗑️ 종량제봉투 대란 생존 가이드</title>
+  <meta name="description" content="종량제봉투 품귀 대란 — 지금 어디서 살 수 있는지, 못 구하면 어떻게 하는지 알려드려요." />
+  <meta property="og:title" content="봉투 어디 있어? 🗑️" />
+  <meta property="og:description" content="종량제봉투 품귀 대란 생존 가이드 — 지금 어디서 살 수 있는지 바로 확인!" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f0f0f; --card: #1a1a1a; --card2: #222; --border: #2e2e2e;
+      --yellow: #f5c518; --green: #22c55e; --red: #ef4444; --text: #f0f0f0; --muted: #888;
+    }
+    body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 60px; }
+    .alert-banner { background: linear-gradient(90deg,#7c2d12,#b45309); padding: 10px 16px; text-align: center; font-size: 13px; font-weight: 700; }
+    .alert-banner span { opacity:.85; font-weight:400; margin-left:6px; }
+    header { padding: 32px 20px 16px; text-align: center; }
+    .emoji-big { font-size: 52px; line-height:1; margin-bottom:12px; }
+    header h1 { font-size: 28px; font-weight: 900; letter-spacing: -1px; color: var(--yellow); }
+    header p { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .status-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 0 16px; margin: 20px 0; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 10px; text-align: center; }
+    .stat-card .num { font-size: 22px; font-weight: 900; color: var(--yellow); line-height: 1; }
+    .stat-card .label { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .section { padding: 0 16px; margin-top: 24px; }
+    .section-title { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .5px; margin-bottom: 12px; }
+    .factcheck { background: linear-gradient(135deg,#1a2e1a,#1a1a2e); border: 1px solid #2d4a2d; border-radius: 14px; padding: 18px; }
+    .factcheck h3 { font-size: 15px; font-weight: 700; color: var(--green); margin-bottom: 10px; }
+    .factcheck p { font-size: 13px; line-height: 1.7; color: #ccc; }
+    .factcheck strong { color: var(--text); }
+    .region-select-wrap { position: relative; }
+    .region-select-wrap select { width: 100%; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; font-size: 15px; font-family: 'Noto Sans KR',sans-serif; appearance: none; cursor: pointer; }
+    .region-select-wrap::after { content:'▾'; position:absolute; right:16px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+    .buy-result { margin-top: 14px; display: none; }
+    .buy-result.show { display: block; }
+    .buy-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+    .buy-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .buy-links { display: flex; flex-direction: column; gap: 8px; }
+    .buy-link { display: flex; align-items: center; justify-content: space-between; background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; text-decoration: none; color: var(--text); font-size: 14px; transition: background .15s; }
+    .buy-link:hover { background: #2a2a2a; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 700; white-space: nowrap; }
+    .badge-green { background:#14532d; color:#4ade80; }
+    .badge-yellow { background:#422006; color:#fbbf24; }
+    .region-notice { background:#1c1a10; border:1px solid #3d3300; border-radius:10px; padding:12px 14px; font-size:13px; color:#d4aa40; margin-top:10px; line-height:1.6; }
+    .alt-list { display: flex; flex-direction: column; gap: 10px; }
+    .alt-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+    .alt-icon { font-size: 22px; flex-shrink: 0; }
+    .alt-text h4 { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+    .alt-text p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .news-list { display: flex; flex-direction: column; gap: 8px; }
+    .news-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-decoration: none; color: var(--text); display: block; }
+    .news-item:hover { background: #222; }
+    .news-item .news-source { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .news-item .news-title { font-size: 14px; line-height: 1.5; }
+    .share-btn { display: block; width: 100%; background: var(--yellow); color: #000; font-size: 15px; font-weight: 700; font-family: 'Noto Sans KR',sans-serif; border: none; border-radius: 12px; padding: 16px; cursor: pointer; margin-top: 16px; }
+    .updated { text-align: center; font-size: 11px; color: var(--muted); margin-top: 20px; }
+    footer { margin-top: 32px; padding: 20px 16px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--muted); line-height: 1.8; }
+    footer a { color: #888; }
+  </style>
+</head>
+<body>
+
+<div class="alert-banner">
+  🔴 종량제봉투 품귀 대란 진행 중
+  <span>나프타 수급 차질 → 생산량 감소 → 사재기 → 현장 품절</span>
+</div>
+
+<header>
+  <div class="emoji-big">🗑️</div>
+  <h1>봉투 어디 있어?</h1>
+  <p>지금 어디서 살 수 있는지,<br />못 구하면 어떻게 하는지 바로 알려드려요.</p>
+</header>
+
+<div class="status-grid">
+  <div class="stat-card">
+    <div class="num">60%</div>
+    <div class="label">공장<br />가동률</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:#ef4444">+287%</div>
+    <div class="label">이마트<br />판매 급증</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:#22c55e">충분</div>
+    <div class="label">정부 공식<br />재고 발표</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">📌 팩트체크 — 사재기 할 필요 없어요</div>
+  <div class="factcheck">
+    <h3>✅ 재고는 충분합니다</h3>
+    <p>
+      전국 228개 지자체 평균 <strong>3개월치 재고</strong> 보유.<br />
+      123곳(54%)은 <strong>6개월치 이상</strong> 비축 중.<br /><br />
+      마트에서 못 사는 건 <strong>사재기 때문</strong>이지 생산 중단이 아니에요.<br />
+      정부는 최악의 경우 <strong>일반 봉투 허용도 검토</strong>하고 있습니다.
+    </p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">📍 내 지역 구매처 찾기</div>
+  <div class="region-select-wrap">
+    <select id="regionSelect" onchange="showRegion()">
+      <option value="">— 지역을 선택하세요 —</option>
+      <optgroup label="서울">
+        <option value="seoul">서울 전체</option>
+      </optgroup>
+      <optgroup label="경기도">
+        <option value="gyeonggi">경기도 전체</option>
+        <option value="seongnam">성남시 ⭐ (타지역 봉투 허용)</option>
+      </optgroup>
+      <optgroup label="인천">
+        <option value="incheon">인천</option>
+      </optgroup>
+      <optgroup label="부산/경남">
+        <option value="busan">부산</option>
+        <option value="gimhae">김해시</option>
+      </optgroup>
+      <optgroup label="대전/충청">
+        <option value="daejeon">대전</option>
+      </optgroup>
+      <optgroup label="전라도">
+        <option value="jeonju">전주시 ⭐ (일반봉투 허용 중)</option>
+        <option value="jeonbuk">전북 기타</option>
+      </optgroup>
+      <optgroup label="기타 지역">
+        <option value="other">기타 (전국 공통)</option>
+      </optgroup>
+    </select>
+  </div>
+  <div class="buy-result" id="buyResult"></div>
+</div>
+
+<div class="section">
+  <div class="section-title">💡 봉투 못 구했다면?</div>
+  <div class="alt-list">
+    <div class="alt-item">
+      <div class="alt-icon">🛍️</div>
+      <div class="alt-text">
+        <h4>전주시 — 일반 비닐봉투 허용 (시행 중)</h4>
+        <p>투명/반투명 일반 비닐봉투 사용 가능. 전주시 거주자 한정.</p>
+      </div>
+    </div>
+    <div class="alt-item">
+      <div class="alt-icon">🏛️</div>
+      <div class="alt-text">
+        <h4>정부 — 품귀 시 전국 일반봉투 허용 검토</h4>
+        <p>기후부는 실제 품귀 발생 시 일반 비닐봉투 사용 전국 허용 방안 검토 중. 거주 구청 공지 확인 필요.</p>
+      </div>
+    </div>
+    <div class="alt-item">
+      <div class="alt-icon">⭐</div>
+      <div class="alt-text">
+        <h4>성남시 — 타 시군 봉투 스티커 없이 사용 가능</h4>
+        <p>경기도 내 다른 지역 종량제봉투 있으면 성남시에서 그냥 사용 가능.</p>
+      </div>
+    </div>
+    <div class="alt-item">
+      <div class="alt-icon">📦</div>
+      <div class="alt-text">
+        <h4>봉투 아끼는 법</h4>
+        <p>음식물 완전 분리 + 압축해서 한 봉투에 더 담기. 재활용 철저히 해서 일반봉투 사용량 줄이기.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">📰 최신 뉴스</div>
+  <div class="news-list">
+    <a class="news-item" href="https://v.daum.net/v/20260326213007706" target="_blank" rel="noopener">
+      <div class="news-source">다음뉴스 · 2026.03.26</div>
+      <div class="news-title">종량제 봉투 '품귀'…일반 비닐봉투 배출도 '허용'</div>
+    </a>
+    <a class="news-item" href="https://imnews.imbc.com/replay/2026/nwdesk/article/6810971_37004.html" target="_blank" rel="noopener">
+      <div class="news-source">MBC뉴스 · 2026.03</div>
+      <div class="news-title">중동전쟁에 때아닌 종량제 봉투 '품절 대란'‥"비축 물량 충분"</div>
+    </a>
+    <a class="news-item" href="https://www.hankookilbo.com/news/article/amp/A2026032716310001480" target="_blank" rel="noopener">
+      <div class="news-source">한국일보 · 2026.03.27</div>
+      <div class="news-title">"종량제 봉투 많다는데 어디 가서 사나요?"… 과도한 사재기에 구매 제한</div>
+    </a>
+    <a class="news-item" href="https://www.asiatoday.co.kr/kn/view.php?key=20260325010007736" target="_blank" rel="noopener">
+      <div class="news-source">아시아투데이 · 2026.03.25</div>
+      <div class="news-title">나프타 수급 우려에 종량제봉투 사재기…온라인·오프라인 동시 품귀</div>
+    </a>
+  </div>
+</div>
+
+<div class="section">
+  <button class="share-btn" onclick="shareThis()">📤 이 페이지 공유하기</button>
+</div>
+
+<div class="updated" id="updatedTime"></div>
+
+<footer>
+  봉투어디있어 · 공공데이터 기반 정보 제공<br />
+  정확한 재고는 해당 구청 홈페이지를 꼭 확인하세요.<br />
+  만든이: <a href="https://github.com/sseksaki" target="_blank">@sseksaki</a>
+</footer>
+
+<script>
+const regionData = {
+  seoul: {
+    notice: "📌 서울시는 구청별로 구매처가 달라요. 아래 링크에서 내 구 검색 후 지정판매소를 확인하세요.",
+    links: [
+      { name: "종량제닷컴 (온라인 공식)", url: "https://www.xn--vk2bo21a7ia.com/", status: "green", label: "구매 가능" },
+      { name: "서울시 클린서울 (판매소 찾기)", url: "https://www.cleanseoul.kr", status: "green", label: "공식" },
+      { name: "쿠팡 — 서울 종량제봉투", url: "https://www.coupang.com/np/search?q=서울+종량제봉투", status: "yellow", label: "재고 변동" },
+    ]
+  },
+  gyeonggi: {
+    notice: "📌 경기도는 시군별로 규격봉투가 달라요. 반드시 본인 거주 시군 봉투를 구매해야 해요.",
+    links: [
+      { name: "종량제닷컴 (온라인)", url: "https://www.xn--vk2bo21a7ia.com/", status: "green", label: "구매 가능" },
+      { name: "쿠팡 — 경기도 종량제봉투", url: "https://www.coupang.com/np/search?q=경기도+종량제봉투", status: "yellow", label: "재고 변동" },
+    ]
+  },
+  seongnam: {
+    notice: "⭐ 성남시는 타 시군 종량제봉투도 스티커 없이 사용 가능! 경기도 다른 지역 봉투 있으면 그냥 사용하세요.",
+    links: [
+      { name: "성남시청 공지 확인", url: "https://www.seongnam.go.kr", status: "green", label: "공식" },
+      { name: "종량제닷컴 (온라인)", url: "https://www.xn--vk2bo21a7ia.com/", status: "green", label: "구매 가능" },
+    ]
+  },
+  incheon: {
+    notice: "📌 인천시 각 구별 지정판매소를 확인하세요.",
+    links: [
+      { name: "종량제닷컴 (온라인)", url: "https://www.xn--vk2bo21a7ia.com/", status: "green", label: "구매 가능" },
+      { name: "쿠팡 — 인천 종량제봉투", url: "https://www.coupang.com/np/search?q=인천+종량제봉투", status: "yellow", label: "재고 변동" },
+    ]
+  },
+  busan: {
+    notice: "📌 부산시 구군별 판매소를 확인하세요.",
+    links: [
+      { name: "종량제닷컴 (온라인)", url: "https://www.xn--vk2bo21a7ia.com/", status: "green", label: "구매 가능" },
+      { name: "쿠팡 — 부산 종량제봉투", url: "https://www.coupang.com/np/search?q=부산+종량제봉투", status: "yellow", label: "재고 변동" },
+    ]
+  },
+  gimhae: {
+    notice: "📌 김해시는 시설관리공단을 통한 온라인 구매가 가능해요.",
+    links: [
+      { name: "김해시청", url: "https://www.gimhae.go.kr", status: "green", label: "공식" },
+      { name: "종량제닷컴 (온라인)", url: "https://www.xn--vk2bo21a7ia.com/", status: "green", label: "구매 가능" },
+    ]
+  },
+  jeonju: {
+    notice: "⭐ 전주시는 현재 일반 비닐봉투(투명/반투명) 사용이 허용되어 있어요! 종량제봉투 못 구해도 배출 가능합니다.",
+    links: [
+      { name: "전주시청 환경과 공지 확인", url: "https://www.jeonju.go.kr", status: "green", label: "일반봉투 허용" },
+      { name: "종량제닷컴 (온라인)", url: "https://www.xn--vk2bo21a7ia.com/", status: "green", label: "구매 가능" },
+    ]
+  },
+  daejeon: {
+    notice: "📌 대전시는 사재기 자제를 당부하며 충분한 재고를 보유 중이라고 공지했어요.",
+    links: [
+      { name: "종량제닷컴 (온라인)", url: "https://www.xn--vk2bo21a7ia.com/", status: "green", label: "구매 가능" },
+      { name: "쿠팡 — 대전 종량제봉투", url: "https://www.coupang.com/np/search?q=대전+종량제봉투", status: "yellow", label: "재고 변동" },
+    ]
+  },
+  jeonbuk: {
+    notice: "📌 전북 지역은 각 시군 홈페이지에서 지정판매소를 확인하세요.",
+    links: [
+      { name: "종량제닷컴 (온라인)", url: "https://www.xn--vk2bo21a7ia.com/", status: "green", label: "구매 가능" },
+      { name: "쿠팡 — 전북 종량제봉투", url: "https://www.coupang.com/np/search?q=전북+종량제봉투", status: "yellow", label: "재고 변동" },
+    ]
+  },
+  other: {
+    notice: "📌 지역마다 봉투 규격이 달라요. 거주 시군구 홈페이지에서 '종량제봉투 판매소'를 검색해 보세요.",
+    links: [
+      { name: "종량제닷컴 (전국 온라인 공식)", url: "https://www.xn--vk2bo21a7ia.com/", status: "green", label: "구매 가능" },
+      { name: "쿠팡 검색", url: "https://www.coupang.com/np/search?q=종량제봉투", status: "yellow", label: "재고 변동" },
+      { name: "G마켓 검색", url: "https://browse.gmarket.co.kr/search?keyword=종량제봉투", status: "yellow", label: "재고 변동" },
+    ]
+  }
+};
+
+function showRegion() {
+  const val = document.getElementById('regionSelect').value;
+  const el = document.getElementById('buyResult');
+  if (!val) { el.classList.remove('show'); return; }
+  const d = regionData[val];
+  if (!d) return;
+  const bc = { green: 'badge-green', yellow: 'badge-yellow' };
+  el.innerHTML = `
+    <div class="buy-card">
+      <h4>🛒 구매처</h4>
+      <div class="buy-links">
+        ${d.links.map(l => `
+          <a class="buy-link" href="${l.url}" target="_blank" rel="noopener">
+            <span>${l.name}</span>
+            <span class="badge ${bc[l.status]}">${l.label}</span>
+          </a>
+        `).join('')}
+      </div>
+    </div>
+    <div class="region-notice">${d.notice}</div>
+  `;
+  el.classList.add('show');
+}
+
+function shareThis() {
+  const data = { title: '봉투 어디 있어? 🗑️', text: '종량제봉투 품귀 대란 생존 가이드 — 지금 어디서 살 수 있는지 확인!', url: window.location.href };
+  if (navigator.share) { navigator.share(data); }
+  else { navigator.clipboard.writeText(window.location.href).then(() => alert('링크 복사됐어요! 공유해주세요 🙂')); }
+}
+
+const now = new Date();
+document.getElementById('updatedTime').textContent =
+  `마지막 업데이트: ${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+</script>
+</body>
+</html>
