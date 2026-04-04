@@ -5,7 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>봉투 어디 있어? 🗑️</title>
   <meta name="description" content="내 주변 종량제봉투 판매처 지도 — GPS로 찾기, 가격 확인, 재고 신고" />
-  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=1bdea39e89a2a7884695c90e4340e734&libraries=services,clusterer"></script>
+  <script>
+    // Kakao SDK 로드 실패 시 에러 처리
+    window.kakaoLoadError = false;
+  </script>
+  <script type="text/javascript"
+    src="//dapi.kakao.com/v2/maps/sdk.js?appkey=1bdea39e89a2a7884695c90e4340e734&libraries=services,clusterer"
+    onerror="window.kakaoLoadError=true"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <style>
@@ -425,6 +431,22 @@ function toast(msg) {
 
 // ── 시작 ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
+  // 카카오 SDK 로드 실패 감지
+  if (window.kakaoLoadError || typeof kakao === 'undefined') {
+    document.getElementById('loading').innerHTML = `
+      <div style="text-align:center;padding:20px">
+        <div style="font-size:40px;margin-bottom:16px">⚠️</div>
+        <p style="color:#fff;font-size:15px;font-weight:700;margin-bottom:8px">카카오 지도 도메인 등록 필요</p>
+        <p style="color:#888;font-size:13px;line-height:1.8;margin-bottom:20px">
+          <a href="https://developers.kakao.com" target="_blank" style="color:#f5c518">developers.kakao.com</a> 에서<br/>
+          앱 → 플랫폼 → Web → 아래 도메인 추가:<br/>
+          <code style="background:#222;padding:4px 10px;border-radius:4px;color:#fff;display:inline-block;margin-top:6px">https://sseksaki.github.io</code>
+        </p>
+        <button onclick="location.reload()" style="background:#f5c518;color:#000;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer">등록 후 새로고침</button>
+      </div>`;
+    return;
+  }
+
   // GPS 시도, 5초 내로 안 되면 서울로 시작
   const fallback = setTimeout(() => {
     if (!map) { initMap(37.5665, 126.9780); }
