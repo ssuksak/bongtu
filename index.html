@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#ffffff" />
   <title>봉투 어디 있어?</title>
   <meta name="description" content="내 주변 종량제봉투 판매처 지도 — GPS로 찾기, 가격 확인, 재고 신고" />
   <script>window.kakaoLoadError = false;</script>
@@ -12,6 +14,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root, html[data-theme], body {
+      color-scheme: light only;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { color-scheme: light; }
+    }
     :root {
       --blue: #0064FF;
       --blue-light: #EBF3FF;
@@ -31,37 +39,37 @@
     html, body {
       height: 100%; overflow: hidden;
       font-family: 'Noto Sans KR', -apple-system, sans-serif;
-      background: var(--gray100);
-      color: var(--black);
+      background: #F2F4F6 !important;
+      color: #191F28 !important;
     }
 
     /* ── 헤더 ──────────────────────────────────── */
     #header {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      background: var(--white);
+      background: #ffffff !important;
       padding: 0 16px;
       height: 56px;
       display: flex; align-items: center; gap: 10px;
-      border-bottom: 1px solid var(--gray200);
+      border-bottom: 1px solid #E8EAED;
     }
     #header-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
     #header h1 {
-      font-size: 17px; font-weight: 700; color: var(--black);
+      font-size: 17px; font-weight: 700; color: #191F28 !important;
       white-space: nowrap;
     }
     .header-badge {
-      background: var(--red-light); color: var(--red);
+      background: #FFF0F1; color: #F04452;
       font-size: 11px; font-weight: 700;
       padding: 2px 7px; border-radius: 20px;
       white-space: nowrap;
     }
     #region-label {
-      font-size: 12px; color: var(--gray400);
+      font-size: 12px; color: #B0B8C1;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       max-width: 100px;
     }
     #gps-btn {
-      background: var(--blue); color: var(--white);
+      background: #0064FF; color: #ffffff !important;
       border: none; border-radius: 10px;
       padding: 8px 14px; font-size: 13px; font-weight: 600;
       font-family: 'Noto Sans KR', sans-serif;
@@ -75,30 +83,30 @@
     /* ── 가격 바 ────────────────────────────────── */
     #price-bar {
       position: fixed; top: 64px; left: 12px; right: 12px; z-index: 99;
-      background: var(--white);
+      background: #ffffff !important;
       border-radius: 12px;
       padding: 10px 14px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.08);
       display: none;
-      font-size: 12px; color: var(--gray600);
+      font-size: 12px; color: #6B7684;
     }
     #price-bar .pb-row {
       display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
     }
     #price-bar .pb-region {
-      font-weight: 700; color: var(--black); font-size: 13px; margin-right: 4px;
+      font-weight: 700; color: #191F28 !important; font-size: 13px; margin-right: 4px;
     }
-    #price-bar .pb-sep { color: var(--gray200); }
-    #price-bar .pb-item b { color: var(--blue); font-weight: 700; }
+    #price-bar .pb-sep { color: #E8EAED; }
+    #price-bar .pb-item b { color: #0064FF !important; font-weight: 700; }
 
     /* ── 범례 ───────────────────────────────────── */
     #legend {
       position: fixed; bottom: 208px; right: 12px; z-index: 99;
-      background: var(--white);
+      background: #ffffff !important;
       border-radius: 12px;
       padding: 10px 12px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      font-size: 11px; color: var(--gray600);
+      font-size: 11px; color: #6B7684 !important;
     }
     #legend div { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
     #legend div:last-child { margin-bottom: 0; }
@@ -107,7 +115,7 @@
     /* ── 하단 패널 ──────────────────────────────── */
     #panel {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-      background: var(--white);
+      background: #ffffff !important;
       border-radius: 20px 20px 0 0;
       padding: 0 20px 36px;
       box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
@@ -123,21 +131,21 @@
     #panel-default { }
     .crisis-row {
       display: flex; align-items: center; gap: 8px;
-      background: var(--red-light); border-radius: 12px;
+      background: #FFF0F1; border-radius: 12px;
       padding: 12px 14px; margin-bottom: 12px;
     }
     .crisis-icon { font-size: 20px; }
     .crisis-text { flex: 1; }
-    .crisis-title { font-size: 14px; font-weight: 700; color: var(--red); }
-    .crisis-desc { font-size: 12px; color: var(--gray600); margin-top: 2px; line-height: 1.5; }
+    .crisis-title { font-size: 14px; font-weight: 700; color: #F04452 !important; }
+    .crisis-desc { font-size: 12px; color: #6B7684 !important; margin-top: 2px; line-height: 1.5; }
 
     .guide-row {
       display: flex; align-items: center; gap: 10px;
       padding: 12px 14px;
-      background: var(--gray50); border-radius: 12px;
+      background: #F9FAFB; border-radius: 12px;
     }
-    .guide-row p { font-size: 13px; color: var(--gray800); line-height: 1.6; }
-    .guide-row p b { color: var(--black); font-weight: 700; }
+    .guide-row p { font-size: 13px; color: #333D4B !important; line-height: 1.6; }
+    .guide-row p b { color: #191F28 !important; font-weight: 700; }
 
     /* 가게 패널 */
     #panel-store { display: none; }
@@ -151,15 +159,15 @@
     }
     .store-meta { flex: 1; min-width: 0; }
     .store-name {
-      font-size: 16px; font-weight: 700; color: var(--black);
+      font-size: 16px; font-weight: 700; color: #191F28 !important;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .store-addr {
-      font-size: 12px; color: var(--gray400); margin-top: 2px;
+      font-size: 12px; color: #B0B8C1 !important; margin-top: 2px;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .store-dist {
-      font-size: 12px; color: var(--blue); font-weight: 600; margin-top: 2px;
+      font-size: 12px; color: #0064FF !important; font-weight: 600; margin-top: 2px;
     }
 
     /* 가격 칩 */
@@ -167,12 +175,12 @@
       display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px;
     }
     .p-chip {
-      background: var(--gray100); border-radius: 8px;
-      padding: 5px 10px; font-size: 12px; color: var(--gray600);
+      background: #F2F4F6; border-radius: 8px;
+      padding: 5px 10px; font-size: 12px; color: #6B7684;
       display: flex; flex-direction: column; align-items: center; gap: 1px;
     }
-    .p-chip .sz { font-size: 11px; color: var(--gray400); }
-    .p-chip .price { font-weight: 700; color: var(--black); font-size: 13px; }
+    .p-chip .sz { font-size: 11px; color: #B0B8C1 !important; }
+    .p-chip .price { font-weight: 700; color: #191F28 !important; font-size: 13px; }
 
     /* 재고 신고 버튼 */
     .report-btns { display: flex; gap: 8px; }
@@ -181,13 +189,13 @@
       padding: 13px; font-size: 14px; font-weight: 700;
       font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
     }
-    .btn-yes { background: var(--green); color: var(--white); }
-    .btn-no  { background: var(--red-light); color: var(--red); }
+    .btn-yes { background: #00B493; color: #ffffff !important; }
+    .btn-no  { background: #FFF0F1; color: #F04452 !important; }
     .btn-yes:active { opacity: 0.85; }
     .btn-no:active  { opacity: 0.85; }
 
     .report-status {
-      text-align: center; font-size: 12px; color: var(--gray400);
+      text-align: center; font-size: 12px; color: #B0B8C1 !important;
       margin-top: 10px;
     }
 
@@ -207,19 +215,19 @@
     /* ── 로딩 ───────────────────────────────────── */
     #loading {
       position: fixed; inset: 0; z-index: 999;
-      background: var(--white);
+      background: #ffffff !important;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 16px;
     }
     .spin { font-size: 48px; animation: spin 1.5s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    #loading p { font-size: 15px; font-weight: 600; color: var(--black); }
-    #loading small { font-size: 12px; color: var(--gray400); margin-top: -8px; }
+    #loading p { font-size: 15px; font-weight: 600; color: #191F28 !important; }
+    #loading small { font-size: 12px; color: #B0B8C1 !important; margin-top: -8px; }
 
     /* ── 토스트 ─────────────────────────────────── */
     #toast {
       position: fixed; bottom: 220px; left: 50%; transform: translateX(-50%);
-      background: var(--black); color: var(--white);
+      background: #191F28; color: #ffffff !important;
       padding: 10px 18px; border-radius: 24px;
       font-size: 13px; font-weight: 500;
       z-index: 200; display: none; white-space: nowrap;
