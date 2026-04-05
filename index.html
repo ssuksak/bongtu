@@ -355,7 +355,13 @@ const PRICES = {
   "제주":  {"5L":130,"10L":260,"20L":520,"50L":1220},
 };
 const PRICE_DEFAULT = {"5L":135,"10L":270,"20L":540,"50L":1270};
-const ICONS = {"GS25":"🟢","CU":"🟡","세븐일레븐":"7️⃣","이마트24":"🔵","미니스톱":"🟠"};
+const ICONS = {
+  "GS25":"🟢","CU":"🟡","세븐일레븐":"7️⃣","이마트24":"🔵","미니스톱":"🟠",
+  "이마트":"🛒","롯데마트":"🛒","홈플러스":"🛒","코스트코":"🛒",
+  "슈퍼":"🏬","마트":"🏬","주민센터":"🏛️","동사무소":"🏛️","행정복지센터":"🏛️"
+};
+// 검색할 키워드 목록
+const SEARCH_KEYWORDS = ['편의점', '슈퍼마켓', '마트', '주민센터'];
 
 let map, myMarker, currentLat = 37.5665, currentLng = 126.9780;
 let activeStore = null, storeMarkers = [];
@@ -457,16 +463,26 @@ function locateUser() {
 function searchStores(lat, lng) {
   storeMarkers.forEach(m => m.setMap(null));
   storeMarkers = [];
+
   const ps = new kakao.maps.services.Places();
-  ps.keywordSearch('편의점', (data, status) => {
-    if (status === kakao.maps.services.Status.OK) {
-      renderMarkers(data);
-    } else {
-      toast('주변 판매처 정보를 불러오지 못했어요');
-    }
-  }, {
-    location: new kakao.maps.LatLng(lat, lng),
-    radius: 800, size: 15
+  const opts = { location: new kakao.maps.LatLng(lat, lng), radius: 800, size: 15 };
+  const seen = new Set();
+  let allResults = [];
+  let done = 0;
+
+  SEARCH_KEYWORDS.forEach(keyword => {
+    ps.keywordSearch(keyword, (data, status) => {
+      if (status === kakao.maps.services.Status.OK) {
+        data.forEach(s => {
+          if (!seen.has(s.id)) { seen.add(s.id); allResults.push(s); }
+        });
+      }
+      done++;
+      if (done === SEARCH_KEYWORDS.length) {
+        if (allResults.length > 0) renderMarkers(allResults);
+        else toast('주변 판매처 정보를 불러오지 못했어요');
+      }
+    }, opts);
   });
 }
 
@@ -478,7 +494,7 @@ function renderMarkers(stores) {
       colorClass = rep.inStock ? 'green' : 'red';
 
     const brand = Object.keys(ICONS).find(k => store.place_name.includes(k)) || '';
-    const icon = ICONS[brand] || '🏪';
+    const icon = ICONS[brand] || (store.category_group_name?.includes('마트') ? '🛒' : '🏪');
 
     const el = document.createElement('div');
     el.className = `cmarker ${colorClass}`;
@@ -498,7 +514,7 @@ function renderMarkers(stores) {
       showStorePanel(store, marker);
     });
   });
-  toast(`주변 편의점 ${stores.length}곳 발견`);
+  toast(`주변 판매처 ${stores.length}곳 발견`);
 }
 
 function showStorePanel(store, marker) {
@@ -507,7 +523,7 @@ function showStorePanel(store, marker) {
   document.getElementById('panel-store').style.display = 'block';
 
   const brand = Object.keys(ICONS).find(k => store.place_name.includes(k)) || '';
-  document.getElementById('s-icon').textContent = ICONS[brand] || '🏪';
+  document.getElementById('s-icon').textContent = ICONS[brand] || (store.category_group_name?.includes('마트') ? '🛒' : '🏪');
   document.getElementById('s-name').textContent = store.place_name;
   document.getElementById('s-addr').textContent = store.road_address_name || store.address_name;
   document.getElementById('s-dist').textContent = store.distance ? `📍 ${store.distance}m` : '';
