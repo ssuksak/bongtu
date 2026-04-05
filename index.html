@@ -77,12 +77,41 @@
     }
     #gps-btn:active { opacity: 0.85; }
 
+    /* ── 검색바 ─────────────────────────────────── */
+    #search-bar {
+      position: fixed; top: 56px; left: 0; right: 0; z-index: 99;
+      background: #ffffff; border-bottom: 1px solid #E8EAED;
+      padding: 8px 12px; display: flex; gap: 8px;
+    }
+    #search-input {
+      flex: 1; border: 1.5px solid #E8EAED; border-radius: 10px;
+      padding: 9px 14px; font-size: 14px; font-family: 'Noto Sans KR', sans-serif;
+      outline: none; color: #191F28; background: #F9FAFB;
+    }
+    #search-input:focus { border-color: #0064FF; background: #fff; }
+    #search-btn {
+      background: #0064FF; color: #fff; border: none; border-radius: 10px;
+      padding: 9px 16px; font-size: 13px; font-weight: 700;
+      font-family: 'Noto Sans KR', sans-serif; cursor: pointer; white-space: nowrap;
+    }
+
+    /* ── 재검색 버튼 ──────────────────────────────── */
+    #re-search-btn {
+      position: fixed; top: 122px; left: 50%; transform: translateX(-50%);
+      z-index: 99; background: #191F28; color: #fff;
+      border: none; border-radius: 20px; padding: 9px 20px;
+      font-size: 13px; font-weight: 600; font-family: 'Noto Sans KR', sans-serif;
+      cursor: pointer; white-space: nowrap; display: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    #re-search-btn:active { opacity: 0.85; }
+
     /* ── 지도 ──────────────────────────────────── */
-    #map { position: fixed; top: 56px; left: 0; right: 0; bottom: 0; }
+    #map { position: fixed; top: 110px; left: 0; right: 0; bottom: 0; }
 
     /* ── 가격 바 ────────────────────────────────── */
     #price-bar {
-      position: fixed; top: 64px; left: 12px; right: 12px; z-index: 99;
+      position: fixed; top: 118px; left: 12px; right: 12px; z-index: 98;
       background: #ffffff !important;
       border-radius: 12px;
       padding: 10px 14px;
@@ -254,6 +283,14 @@
   <button id="gps-btn" onclick="locateUser()">📍 내 위치</button>
 </div>
 
+<div id="search-bar">
+  <input id="search-input" type="text" placeholder="🔍  동네, 주소, 장소 검색"
+    onkeydown="if(event.key==='Enter') doSearch()" />
+  <button id="search-btn" onclick="doSearch()">검색</button>
+</div>
+
+<button id="re-search-btn" onclick="reSearch()">🔄 이 지역 재검색</button>
+
 <div id="map"></div>
 
 <div id="price-bar"></div>
@@ -342,9 +379,53 @@ function initMap(lat, lng) {
   myMarker.setMap(map);
 
   kakao.maps.event.addListener(map, 'click', showDefaultPanel);
+
+  // 지도 이동 시 재검색 버튼 표시
+  let dragTimer;
+  const showReSearch = () => {
+    clearTimeout(dragTimer);
+    dragTimer = setTimeout(() => {
+      document.getElementById('re-search-btn').style.display = 'block';
+    }, 300);
+  };
+  kakao.maps.event.addListener(map, 'dragend', showReSearch);
+  kakao.maps.event.addListener(map, 'zoom_changed', showReSearch);
+
   document.getElementById('loading').style.display = 'none';
   searchStores(lat, lng);
   setRegionPrice(lat, lng);
+}
+
+// 장소 검색
+function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) return;
+  const ps = new kakao.maps.services.Places();
+  ps.keywordSearch(q, (data, status) => {
+    if (status === kakao.maps.services.Status.OK && data.length > 0) {
+      const { x, y, place_name } = data[0];
+      const pos = new kakao.maps.LatLng(y, x);
+      map.setCenter(pos);
+      map.setLevel(4);
+      searchStores(parseFloat(y), parseFloat(x));
+      setRegionPrice(parseFloat(y), parseFloat(x));
+      document.getElementById('re-search-btn').style.display = 'none';
+      toast(`📍 ${place_name}`);
+    } else {
+      toast('검색 결과가 없어요');
+    }
+  });
+}
+
+// 현재 지도 중심으로 재검색
+function reSearch() {
+  const center = map.getCenter();
+  const lat = center.getLat();
+  const lng = center.getLng();
+  searchStores(lat, lng);
+  setRegionPrice(lat, lng);
+  document.getElementById('re-search-btn').style.display = 'none';
+  showDefaultPanel();
 }
 
 function locateUser() {
