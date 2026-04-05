@@ -240,6 +240,7 @@
     .cmarker.red    { background: var(--red); }
     .cmarker.gray   { background: var(--gray400); }
     .cmarker.me     { background: var(--blue); }
+    .cmarker.official { border: 3px solid #F5A623; box-shadow: 0 0 0 2px rgba(245,166,35,0.3), 0 2px 8px rgba(0,0,0,0.18); }
 
     /* ── 로딩 ───────────────────────────────────── */
     #loading {
@@ -299,6 +300,7 @@
   <div><span class="ldot" style="background:var(--green)"></span> 재고 있음</div>
   <div><span class="ldot" style="background:var(--red)"></span> 품절</div>
   <div><span class="ldot" style="background:var(--gray400)"></span> 미확인</div>
+  <div><span class="ldot" style="background:var(--gray400);border:2px solid #F5A623"></span> 공식 지정</div>
 </div>
 
 <div id="panel">
@@ -337,31 +339,40 @@
 </div>
 
 <script>
-const PRICES = {
-  "서울":  {"5L":120,"10L":230,"20L":490,"50L":1140},
-  "부산":  {"5L":130,"10L":260,"20L":510,"50L":1190},
-  "대구":  {"5L":155,"10L":310,"20L":622,"50L":1470},
-  "인천":  {"5L":185,"10L":370,"20L":758,"50L":1790},
-  "광주":  {"5L":120,"10L":240,"20L":490,"50L":1140},
-  "대전":  {"5L":125,"10L":250,"20L":500,"50L":1170},
-  "울산":  {"5L":140,"10L":280,"20L":550,"50L":1290},
-  "세종":  {"5L":130,"10L":260,"20L":520,"50L":1230},
-  "수원":  {"5L":145,"10L":290,"20L":580,"50L":1360},
-  "성남":  {"5L":140,"10L":280,"20L":560,"50L":1310},
-  "고양":  {"5L":135,"10L":270,"20L":540,"50L":1260},
-  "용인":  {"5L":145,"10L":290,"20L":580,"50L":1360},
-  "전주":  {"5L":108,"10L":215,"20L":430,"50L":1010},
-  "창원":  {"5L":135,"10L":270,"20L":540,"50L":1260},
-  "제주":  {"5L":130,"10L":260,"20L":520,"50L":1220},
+// 공공데이터 API 키
+const GOV_KEY = 'LjADlALI7ELEclK5gANjfSIQMCeSiHmjAw7dGu15ZHCW5CmOhROkrVIKDZ9bNDQtW6pNZq3NCnSaYnAV6s%2BRmg%3D%3D';
+const API_STORE = 'https://api.data.go.kr/openapi/tn_pubr_public_std_gar_bag_api';
+const API_PRICE = 'https://api.data.go.kr/openapi/tn_pubr_public_weighted_envlp_api';
+
+// 가격 폴백 데이터 (공공 API 실패 시)
+const PRICES_FALLBACK = {
+  "서울":{"5L":120,"10L":230,"20L":490,"50L":1140},
+  "부산":{"5L":130,"10L":260,"20L":510,"50L":1190},
+  "대구":{"5L":155,"10L":310,"20L":622,"50L":1470},
+  "인천":{"5L":185,"10L":370,"20L":758,"50L":1790},
+  "광주":{"5L":120,"10L":240,"20L":490,"50L":1140},
+  "대전":{"5L":125,"10L":250,"20L":500,"50L":1170},
+  "울산":{"5L":140,"10L":280,"20L":550,"50L":1290},
+  "세종":{"5L":130,"10L":260,"20L":520,"50L":1230},
+  "수원":{"5L":145,"10L":290,"20L":580,"50L":1360},
+  "성남":{"5L":140,"10L":280,"20L":560,"50L":1310},
+  "고양":{"5L":135,"10L":270,"20L":540,"50L":1260},
+  "용인":{"5L":145,"10L":290,"20L":580,"50L":1360},
+  "전주":{"5L":108,"10L":215,"20L":430,"50L":1010},
+  "창원":{"5L":135,"10L":270,"20L":540,"50L":1260},
+  "제주":{"5L":130,"10L":260,"20L":520,"50L":1220},
 };
 const PRICE_DEFAULT = {"5L":135,"10L":270,"20L":540,"50L":1270};
+
 const ICONS = {
   "GS25":"🟢","CU":"🟡","세븐일레븐":"7️⃣","이마트24":"🔵","미니스톱":"🟠",
   "이마트":"🛒","롯데마트":"🛒","홈플러스":"🛒","코스트코":"🛒",
   "슈퍼":"🏬","마트":"🏬","주민센터":"🏛️","동사무소":"🏛️","행정복지센터":"🏛️"
 };
-// 검색할 키워드 목록
 const SEARCH_KEYWORDS = ['편의점', '슈퍼마켓', '마트', '주민센터'];
+
+// 현재 지역 가격 캐시
+let currentPrices = null;
 
 let map, myMarker, currentLat = 37.5665, currentLng = 126.9780;
 let activeStore = null, storeMarkers = [];
@@ -464,41 +475,84 @@ function searchStores(lat, lng) {
   storeMarkers.forEach(m => m.setMap(null));
   storeMarkers = [];
 
-  const ps = new kakao.maps.services.Places();
+  // 1) 현재 지역 파악 후 공공 API + 카카오 병렬 호출
+  const geocoder = new kakao.maps.services.Geocoder();
+  geocoder.coord2RegionCode(lng, lat, (result, status) => {
+    const region = result?.find(r => r.region_type === 'H');
+    const sido   = region?.region_1depth_name || '';
+    const sigungu = region?.region_2depth_name || '';
+    fetchOfficialStores(sido, sigungu, lat, lng);
+  });
+
+  // 2) 카카오 Places 병렬 실행
+  const ps   = new kakao.maps.services.Places();
   const opts = { location: new kakao.maps.LatLng(lat, lng), radius: 800, size: 15 };
   const seen = new Set();
-  let allResults = [];
-  let done = 0;
+  let kakaoResults = [], done = 0;
 
   SEARCH_KEYWORDS.forEach(keyword => {
     ps.keywordSearch(keyword, (data, status) => {
-      if (status === kakao.maps.services.Status.OK) {
-        data.forEach(s => {
-          if (!seen.has(s.id)) { seen.add(s.id); allResults.push(s); }
-        });
-      }
-      done++;
-      if (done === SEARCH_KEYWORDS.length) {
-        if (allResults.length > 0) renderMarkers(allResults);
+      if (status === kakao.maps.services.Status.OK)
+        data.forEach(s => { if (!seen.has(s.id)) { seen.add(s.id); kakaoResults.push(s); } });
+      if (++done === SEARCH_KEYWORDS.length) {
+        if (kakaoResults.length > 0) renderMarkers(kakaoResults, false);
         else toast('주변 판매처 정보를 불러오지 못했어요');
       }
     }, opts);
   });
 }
 
-function renderMarkers(stores) {
-  stores.forEach(store => {
-    const rep = reports[store.id];
+// 공공데이터 공식 판매소 조회
+async function fetchOfficialStores(sido, sigungu, lat, lng) {
+  if (!sido) return;
+  try {
+    const url = `${API_STORE}?serviceKey=${GOV_KEY}&pageNo=1&numOfRows=100&type=json`
+              + `&시도명=${encodeURIComponent(sido)}&시군구명=${encodeURIComponent(sigungu)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const items = json?.response?.body?.items?.item;
+    if (!items || !items.length) return;
+
+    // 위도/경도 있는 것만 필터 + 현재 위치 2km 이내
+    const nearby = (Array.isArray(items) ? items : [items]).filter(s => {
+      if (!s.위도 || !s.경도) return false;
+      const d = Math.sqrt(Math.pow((s.위도-lat)*111000,2)+Math.pow((s.경도-lng)*88000,2));
+      return d < 2000;
+    });
+    if (nearby.length > 0) renderMarkers(nearby, true);
+    toast(`🏛️ 공식 판매소 ${nearby.length}곳 추가됨`);
+  } catch(e) { /* 조용히 실패 */ }
+}
+
+function renderMarkers(stores, isOfficial = false) {
+  stores.forEach(raw => {
+    // 공공 API / 카카오 포맷 통일
+    const store = isOfficial ? {
+      id: raw.사업자등록번호 || (raw.위도 + raw.경도),
+      place_name: raw.판매시설명 || raw.판매소명 || '공식 판매소',
+      road_address_name: raw.소재지도로명주소 || '',
+      address_name: raw.소재지지번주소 || '',
+      x: String(raw.경도), y: String(raw.위도),
+      phone: raw.전화번호 || '',
+      distance: '',
+      _official: true,
+      _status: raw.영업상태명 || ''
+    } : raw;
+
+    const id = store.id || (store.y + store.x);
+    const rep = reports[id];
     let colorClass = 'gray';
     if (rep && Date.now() - rep.time < 4 * 3600000)
       colorClass = rep.inStock ? 'green' : 'red';
 
-    const brand = Object.keys(ICONS).find(k => store.place_name.includes(k)) || '';
-    const icon = ICONS[brand] || (store.category_group_name?.includes('마트') ? '🛒' : '🏪');
+    const name = store.place_name || '';
+    const brand = Object.keys(ICONS).find(k => name.includes(k)) || '';
+    const icon = isOfficial ? '🏛️' : (ICONS[brand] || (store.category_group_name?.includes('마트') ? '🛒' : '🏪'));
 
     const el = document.createElement('div');
-    el.className = `cmarker ${colorClass}`;
+    el.className = `cmarker ${colorClass}${isOfficial ? ' official' : ''}`;
     el.innerHTML = icon;
+    if (isOfficial) el.title = '공식 지정 판매소';
 
     const marker = new kakao.maps.CustomOverlay({
       position: new kakao.maps.LatLng(store.y, store.x),
@@ -514,7 +568,7 @@ function renderMarkers(stores) {
       showStorePanel(store, marker);
     });
   });
-  toast(`주변 판매처 ${stores.length}곳 발견`);
+  if (!isOfficial) toast(`주변 판매처 ${stores.length}곳 발견`);
 }
 
 function showStorePanel(store, marker) {
@@ -524,13 +578,14 @@ function showStorePanel(store, marker) {
 
   const brand = Object.keys(ICONS).find(k => store.place_name.includes(k)) || '';
   document.getElementById('s-icon').textContent = ICONS[brand] || (store.category_group_name?.includes('마트') ? '🛒' : '🏪');
-  document.getElementById('s-name').textContent = store.place_name;
+  const officialBadge = store._official
+    ? '<span style="background:#FFF4E0;color:#E07B00;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px">🏛️ 공식</span>'
+    : '';
+  document.getElementById('s-name').innerHTML = store.place_name + officialBadge;
   document.getElementById('s-addr').textContent = store.road_address_name || store.address_name;
-  document.getElementById('s-dist').textContent = store.distance ? `📍 ${store.distance}m` : '';
+  document.getElementById('s-dist').textContent = store.distance ? `📍 ${store.distance}m` : (store.phone ? `📞 ${store.phone}` : '');
 
-  const region = document.getElementById('region-label').textContent;
-  const key = Object.keys(PRICES).find(k => region.includes(k));
-  const p = key ? PRICES[key] : PRICE_DEFAULT;
+  const p = currentPrices || PRICE_DEFAULT;
   document.getElementById('s-prices').innerHTML = Object.entries(p)
     .map(([sz, price]) => `
       <div class="p-chip">
@@ -571,17 +626,42 @@ function report(inStock) {
 
 function setRegionPrice(lat, lng) {
   const geocoder = new kakao.maps.services.Geocoder();
-  geocoder.coord2RegionCode(lng, lat, (result, status) => {
+  geocoder.coord2RegionCode(lng, lat, async (result, status) => {
     if (status !== kakao.maps.services.Status.OK) return;
     const region = result.find(r => r.region_type === 'H');
     if (!region) return;
-    const city = region.region_1depth_name;
-    const gu   = region.region_2depth_name;
+    const city  = region.region_1depth_name;
+    const gu    = region.region_2depth_name;
     const label = gu ? `${city} ${gu}` : city;
     document.getElementById('region-label').textContent = label;
 
-    const key = Object.keys(PRICES).find(k => label.includes(k) || city.includes(k));
-    const p = key ? PRICES[key] : PRICE_DEFAULT;
+    // 공공 API로 공식 가격 조회
+    let p = null;
+    try {
+      const url = `${API_PRICE}?serviceKey=${GOV_KEY}&pageNo=1&numOfRows=20&type=json`
+                + `&CTPRVN_NM=${encodeURIComponent(city)}&SIGNGU_NM=${encodeURIComponent(gu)}`;
+      const res  = await fetch(url);
+      const json = await res.json();
+      const items = json?.response?.body?.items?.item;
+      const item  = Array.isArray(items) ? items[0] : items;
+      if (item) {
+        // 일반 가정용 봉투 가격 추출 (PRICE_5, PRICE_10, PRICE_20, PRICE_50 필드)
+        p = {};
+        if (item.PRICE_5)  p['5L']  = parseInt(item.PRICE_5);
+        if (item.PRICE_10) p['10L'] = parseInt(item.PRICE_10);
+        if (item.PRICE_20) p['20L'] = parseInt(item.PRICE_20);
+        if (item.PRICE_50) p['50L'] = parseInt(item.PRICE_50);
+        if (!Object.keys(p).length) p = null;
+      }
+    } catch(e) { /* 폴백 사용 */ }
+
+    // 폴백: 하드코딩 가격
+    if (!p) {
+      const key = Object.keys(PRICES_FALLBACK).find(k => label.includes(k) || city.includes(k));
+      p = key ? PRICES_FALLBACK[key] : PRICE_DEFAULT;
+    }
+    currentPrices = p;
+
     const bar = document.getElementById('price-bar');
     bar.innerHTML = `
       <div class="pb-row">
