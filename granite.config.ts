@@ -4,7 +4,7 @@ export default defineConfig({
   appName: 'comssuksakbongtu',
   outdir: 'dist',
   brand: {
-    displayName: '봉투 어디 있어?',
+    displayName: '쓰레기봉투 어디 있어?',
     primaryColor: '#FF6B35',
     icon: 'https://ssuksak.github.io/bongtu/assets/logo_600x600.png',
   },
