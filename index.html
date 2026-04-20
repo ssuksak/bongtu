@@ -9,7 +9,7 @@
   <meta name="description" content="내 주변 종량제봉투 판매처 지도 — GPS로 찾기, 가격 확인, 재고 신고" />
   <script>window.kakaoLoadError = false;</script>
   <script type="text/javascript"
-    src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9b2d956d02e8bd8ad58de3641a8c8c62&libraries=services,clusterer"
+    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9b2d956d02e8bd8ad58de3641a8c8c62&libraries=services,clusterer"
     onerror="window.kakaoLoadError=true"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
   <style>
@@ -684,17 +684,29 @@ function toast(msg) {
 }
 
 window.addEventListener('load', () => {
+  const origin = location.origin;
+  const sdkSrc = document.querySelector('script[src*="dapi.kakao.com"]')?.src || 'N/A';
+
   if (window.kakaoLoadError || typeof kakao === 'undefined') {
     document.getElementById('loading').innerHTML = `
-      <div style="text-align:center;padding:32px">
-        <div style="font-size:40px;margin-bottom:16px">⚠️</div>
-        <p style="font-size:16px;font-weight:700;color:#191F28;margin-bottom:8px">카카오 지도 도메인 등록 필요</p>
-        <p style="font-size:13px;color:#6B7684;line-height:1.8;margin-bottom:20px">
-          <a href="https://developers.kakao.com" target="_blank" style="color:#0064FF">developers.kakao.com</a> 에서<br/>
-          앱 → 플랫폼 → Web → 도메인 추가:<br/>
-          <code style="background:#F2F4F6;padding:4px 10px;border-radius:8px;color:#191F28;display:inline-block;margin-top:6px;font-size:13px">https://ssuksak.github.io</code>
+      <div style="text-align:center;padding:24px;max-width:520px;margin:0 auto">
+        <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+        <p style="font-size:16px;font-weight:700;color:#191F28;margin-bottom:8px">카카오 지도 SDK 로드 실패</p>
+        <p style="font-size:13px;color:#6B7684;line-height:1.7;margin-bottom:14px">
+          도메인 등록은 되어 있어도, <b>실제 실행 Origin</b>이 다르거나 SDK 주소 로딩이 차단되면 동일 증상이 납니다.
         </p>
-        <button onclick="location.reload()" style="background:#0064FF;color:#fff;border:none;border-radius:12px;padding:13px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">등록 후 새로고침</button>
+        <div style="background:#F8FAFB;border:1px solid #E5E8EB;border-radius:12px;padding:12px;text-align:left;font-size:12px;color:#4E5968;line-height:1.6;margin-bottom:14px;word-break:break-all">
+          <div><b>현재 Origin:</b> ${origin}</div>
+          <div><b>SDK URL:</b> ${sdkSrc}</div>
+          <div><b>onerror 발생:</b> ${String(window.kakaoLoadError)}</div>
+          <div><b>kakao 객체 존재:</b> ${typeof kakao !== 'undefined'}</div>
+        </div>
+        <p style="font-size:12px;color:#6B7684;line-height:1.7;margin-bottom:16px">
+          Kakao Developers → 앱 → 플랫폼 → Web 도메인에<br/>
+          <code style="background:#F2F4F6;padding:2px 8px;border-radius:8px;color:#191F28">${origin}</code><br/>
+          을 정확히 추가했는지 다시 확인하세요.
+        </p>
+        <button onclick="location.reload()" style="background:#0064FF;color:#fff;border:none;border-radius:12px;padding:13px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">다시 시도</button>
       </div>`;
     return;
   }
