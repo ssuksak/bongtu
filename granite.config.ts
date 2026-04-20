@@ -1,7 +1,7 @@
 import { defineConfig } from '@apps-in-toss/web-framework/config';
 
 export default defineConfig({
-  appName: 'bongtu',
+  appName: 'comssuksakbongtu',
   outdir: 'dist',
   brand: {
     displayName: '봉투 어디 있어?',
