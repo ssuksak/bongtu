@@ -52,21 +52,39 @@
       display: flex; align-items: center; gap: 10px;
       border-bottom: 1px solid #E8EAED;
     }
-    #header-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    #header-left {
+      display: flex; align-items: center; gap: 8px;
+      flex: 1; min-width: 0; overflow: hidden;
+    }
     #header h1 {
       font-size: 17px; font-weight: 700; color: #191F28 !important;
       white-space: nowrap;
+      min-width: 0; overflow: hidden; text-overflow: ellipsis;
+      flex-shrink: 1;
     }
     .header-badge {
       background: #FFF0F1; color: #F04452;
       font-size: 11px; font-weight: 700;
       padding: 2px 7px; border-radius: 20px;
       white-space: nowrap;
+      flex-shrink: 0;
     }
     #region-label {
       font-size: 12px; color: #B0B8C1;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      max-width: 100px;
+      max-width: 78px;
+      min-width: 0;
+      text-align: right;
+      flex-shrink: 1;
+    }
+    @media (max-width: 380px) {
+      .header-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+      }
+      #region-label {
+        max-width: 64px;
+      }
     }
     #gps-btn {
       background: #0064FF; color: #ffffff !important;
